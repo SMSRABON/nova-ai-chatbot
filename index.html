@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Nova AI — a smart chat assistant powered by Gemini.">
+<meta name="theme-color" content="#0b1020">
+<title>Nova AI — Smart Chat Assistant</title>
+
+<!-- Markdown rendering, sanitization and syntax highlighting -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+
+<style>
+:root{
+  color-scheme:dark;--bg:#090e1c;--panel:#11182a;--panel2:#182239;--panel3:#202c46;
+  --text:#edf2ff;--muted:#94a2bf;--line:rgba(255,255,255,.09);--accent:#8b7cff;
+  --accent2:#50d8ca;--user:#29264d;--shadow:0 20px 65px rgba(0,0,0,.25);
+}
+[data-theme="light"]{
+  color-scheme:light;--bg:#f3f5fb;--panel:#fff;--panel2:#f2f4fa;--panel3:#e8ecf6;
+  --text:#1d2540;--muted:#697591;--line:rgba(29,39,75,.12);--accent:#6b5bea;
+  --accent2:#079f98;--user:#eeecff;--shadow:0 18px 55px rgba(37,46,85,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 75% 0%,rgba(116,95,255,.13),transparent 30%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,textarea,select{font:inherit}button{cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:285px minmax(0,1fr);gap:16px;max-width:1700px;margin:auto;padding:16px;min-height:100vh}
+.sidebar,.main{background:var(--panel);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);min-width:0}
+.sidebar{padding:19px;display:flex;flex-direction:column;gap:17px;min-height:calc(100vh - 32px)}
+.sidebar-heading{display:flex;justify-content:flex-end;margin-bottom:-10px}
+.close-sidebar{display:none}
+.sidebar-backdrop{display:none}
+.brand{display:flex;align-items:center;gap:11px;font-size:20px;font-weight:800;letter-spacing:-.5px}
+.logo,.welcome-orb{display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#8d7bff,#45d9cc);box-shadow:0 9px 26px #7768d94d}
+.logo{width:40px;height:40px;border-radius:14px;font-size:21px}
+.tag{color:var(--muted);font-size:12px;font-weight:500;margin-top:2px}
+.new-chat{border:0;padding:13px 15px;border-radius:13px;color:white;font-weight:750;background:linear-gradient(110deg,#7566f1,#927dff);box-shadow:0 8px 22px #7566f13b}
+.new-chat:hover,.send:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.side-label{color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px}
+.search-wrap{position:relative}
+.search-wrap input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 12px 11px 35px;color:var(--text);outline:none}
+.search-icon{position:absolute;left:12px;top:10px;color:var(--muted)}
+.history{display:flex;flex-direction:column;gap:6px;overflow:auto;max-height:36vh}
+.history-item{width:100%;text-align:left;border:1px solid transparent;color:var(--muted);background:transparent;border-radius:10px;padding:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-item:hover,.history-item.active{color:var(--text);background:var(--panel2);border-color:var(--line)}
+.side-bottom{margin-top:auto;display:grid;gap:12px}
+.personality-label{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}
+select{width:100%;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px;outline:none}
+.side-actions{display:flex;gap:8px;flex-wrap:wrap}
+.soft-btn,.icon-btn{color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+.soft-btn:hover,.icon-btn:hover{color:var(--text);border-color:var(--accent)}
+.main{display:flex;flex-direction:column;min-height:calc(100vh - 32px);overflow:hidden}
+.topbar{min-height:70px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 25px;gap:12px}
+.top-title{font-weight:780}.status{color:var(--muted);font-size:12px;display:flex;align-items:center;gap:7px;margin-top:3px}
+.dot{width:7px;height:7px;background:#40d6a2;border-radius:50%;box-shadow:0 0 10px #40d6a2}
+.top-actions{display:flex;gap:8px}.icon-btn{width:39px;height:39px;padding:0;font-size:16px}
+.mobile-menu{display:inline-block}
+.app.sidebar-collapsed{grid-template-columns:minmax(0,1fr)}
+.app.sidebar-collapsed .sidebar{display:none}
+.chat{width:min(920px,100%);margin:0 auto;padding:30px 26px 22px;flex:1;overflow:auto;display:flex;flex-direction:column;gap:22px}
+.welcome{text-align:center;margin:auto 0;padding:25px 10px}
+.welcome-orb{width:70px;height:70px;border-radius:24px;margin:0 auto 18px;font-size:31px}
+h1{margin:0;font-size:clamp(27px,4vw,40px);letter-spacing:-1.4px}
+.welcome p{color:var(--muted);margin:10px auto 25px;max-width:500px;line-height:1.65}
+.suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;max-width:650px;margin:auto}
+.suggestion{text-align:left;padding:15px;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:15px;line-height:1.4;transition:.18s}
+.suggestion small{display:block;color:var(--muted);margin-top:5px}
+.suggestion:hover{border-color:var(--accent);transform:translateY(-2px)}
+.message{display:flex;gap:12px;align-items:flex-start;max-width:100%;animation:rise .2s ease}
+@keyframes rise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.avatar{flex:0 0 36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:13px;font-weight:800;background:linear-gradient(135deg,#7566f1,#48cfc4);color:white}
+.message.user .avatar{background:var(--user);color:var(--accent)}
+.bubble-wrap{min-width:0;max-width:calc(100% - 48px);width:fit-content}
+.who{color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.7px;margin:2px 0 7px}
+.bubble{overflow-wrap:anywhere;line-height:1.72;font-size:14px;padding:14px 17px;border:1px solid var(--line);border-radius:5px 16px 16px 16px;background:var(--panel2);max-width:100%}
+.message.user .bubble{background:var(--user);border-radius:16px 5px 16px 16px;white-space:pre-wrap}
+.message.user{flex-direction:row-reverse}.message.user .bubble-wrap{text-align:right}.message.user .bubble{text-align:left;display:inline-block}
+.message-actions{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.message.user .message-actions{justify-content:flex-end}
+.message-actions button{border:1px solid transparent;background:transparent;color:var(--muted);font-size:11px;padding:5px 7px;border-radius:7px}
+.message-actions button:hover{color:var(--accent);background:var(--panel2);border-color:var(--line)}
+/* Markdown */
+.bubble h1,.bubble h2,.bubble h3,.bubble h4{font-size:1.12em;letter-spacing:-.3px;margin:1.1em 0 .5em}
+.bubble h1:first-child,.bubble h2:first-child,.bubble h3:first-child{margin-top:0}
+.bubble p{margin:.45em 0}.bubble ul,.bubble ol{padding-left:23px;margin:.5em 0}
+.bubble li{margin:.25em 0}.bubble blockquote{margin:.7em 0;padding:4px 12px;border-left:3px solid var(--accent);color:var(--muted);background:rgba(139,124,255,.07)}
+.bubble a{color:var(--accent);text-decoration:underline}.bubble hr{border:0;border-top:1px solid var(--line);margin:1em 0}
+.bubble table{border-collapse:collapse;width:100%;display:block;overflow-x:auto;margin:.8em 0;font-size:13px}
+.bubble th,.bubble td{border:1px solid var(--line);padding:8px 10px;text-align:left;min-width:90px}
+.bubble th{background:var(--panel3)}
+.bubble :not(pre)>code{background:var(--panel3);padding:2px 5px;border-radius:5px;font-size:.92em}
+.code-block{position:relative;margin:12px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0d1424;text-align:left}
+.code-head{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:#172139;color:#aab6d2;font-size:11px}
+.code-head button{background:#263451;color:#e9edff;border:1px solid #ffffff18;border-radius:7px;padding:5px 9px;font-size:11px}
+.code-block pre{margin:0;padding:14px;overflow:auto;max-width:100%}
+.code-block code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;line-height:1.65;white-space:pre}
+.typing{display:flex;gap:5px;padding:16px}
+.typing span{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:bounce .9s infinite alternate}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{to{opacity:.35;transform:translateY(-5px)}}
+.composer-area{padding:12px 25px 10px}
+.composer{width:min(920px,100%);margin:auto;display:flex;gap:10px;align-items:flex-end;padding:10px;background:var(--panel2);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 25px #0000000d}
+textarea{flex:1;resize:none;min-height:44px;max-height:160px;border:0;outline:0;color:var(--text);background:transparent;padding:11px 8px;line-height:1.5}
+textarea::placeholder{color:var(--muted)}
+.send{width:45px;height:45px;border:0;border-radius:14px;background:linear-gradient(135deg,#7665f0,#927eff);color:white;font-size:18px;transition:.15s}
+.send:disabled{opacity:.45;cursor:not-allowed}
+.hint{text-align:center;color:var(--muted);font-size:10px;margin-top:9px}
+.credit{text-align:center;color:var(--muted);font-size:11px;padding:9px 12px 15px;letter-spacing:.3px}
+.credit strong{color:var(--accent);font-weight:750}
+.error{color:#ff9aa6;font-size:12px;padding:11px 14px;border:1px solid #ff8d9b44;border-radius:10px;background:#ff8d9b0c}
+.empty-search{color:var(--muted);font-size:12px;padding:10px}
+@media(max-width:850px){
+ .app{grid-template-columns:1fr;padding:8px;gap:8px}
+ .sidebar{display:none;position:fixed;z-index:30;inset:8px auto 8px 8px;width:min(310px,88vw);min-height:0;overflow-y:auto}
+ .sidebar.open{display:flex}
+ .close-sidebar{display:inline-grid;place-items:center}
+ .sidebar-backdrop{display:block;position:fixed;inset:0;z-index:25;background:rgba(0,0,0,.48);opacity:0;visibility:hidden;transition:opacity .18s ease,visibility .18s ease}
+ .sidebar-backdrop.visible{opacity:1;visibility:visible}
+ .main{min-height:calc(100vh - 16px)}
+ .mobile-menu{display:inline-block}
+ .topbar{padding:0 13px;min-height:62px}
+ .chat{padding:22px 13px 14px}
+ .composer-area{padding:10px 12px 8px}
+ .suggestions{grid-template-columns:1fr}
+}
+@media(max-width:420px){
+ .top-title{font-size:14px}.status{font-size:10px}.top-actions{gap:5px}
+ .icon-btn{width:35px;height:35px}.bubble{font-size:13px;padding:12px}
+ .avatar{flex-basis:32px;height:32px}.bubble-wrap{max-width:calc(100% - 42px)}
+ .side-actions>*{flex:1}
+}
+@media print{
+ body{background:#fff!important;color:#111!important}
+ .app{display:block;padding:0;max-width:none}
+ .sidebar,.topbar,.composer-area,.credit,.message-actions{display:none!important}
+ .main{border:0;box-shadow:none;min-height:0;background:#fff}
+ .chat{width:100%;overflow:visible;padding:0;display:block}
+ .message{break-inside:avoid;margin:0 0 18px}
+ .bubble{background:#fff!important;color:#111!important;border:1px solid #ddd!important}
+ .who{color:#555!important}
+ .bubble pre,.code-block{break-inside:avoid}
+ .code-block{background:#f4f4f4!important}
+ .code-head{background:#eee!important;color:#333!important}
+ .code-head button{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar" aria-label="Main sidebar">
+    <div class="sidebar-heading">
+      <button class="icon-btn close-sidebar" id="closeSidebarBtn" type="button" aria-label="Close sidebar" title="Close sidebar">✕</button>
+    </div>
+    <div class="brand"><div class="logo">✦</div><div>Nova AI<div class="tag">Your smart assistant</div></div></div>
+    <button class="new-chat" id="newChat">＋ &nbsp; New chat</button>
+    <div class="side-label">Search conversations</div>
+    <div class="search-wrap"><span class="search-icon">⌕</span><input id="historySearch" type="search" placeholder="Search your chats..."></div>
+    <div class="side-label">Recent conversations</div>
+    <div class="history" id="history"></div>
+    <div class="side-bottom">
+      <div>
+        <label class="personality-label" for="personality">AI personality / Mode</label>
+        <select id="personality">
+          <option value="helpful">Helpful Assistant</option>
+          <option value="tutor">Study Tutor</option>
+          <option value="coder">Coding Expert</option>
+          <option value="writer">Creative Writer</option>
+          <option value="professional">Professional Assistant</option>
+          <option value="researcher">Research Analyst</option>
+          <option value="fun">Friendly & Fun</option>
+          <option value="interviewer">Interview Coach</option>
+        </select>
+      </div>
+      <div class="side-actions">
+        <button class="soft-btn" id="themeBtn">☼ Theme</button>
+        <button class="soft-btn" id="exportTxtBtn">↓ Export TXT</button>
+        <button class="soft-btn" id="exportPdfBtn">▤ Export PDF</button>
+        <button class="soft-btn" id="clearBtn">Clear history</button>
+      </div>
+      <div class="tag">Nova AI · Powered by Gemini</div>
+    </div>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="icon-btn mobile-menu" id="menuBtn" aria-label="Toggle sidebar" aria-expanded="true" title="Toggle sidebar">☰</button>
+        <div><div class="top-title">AI Assistant</div><div class="status"><span class="dot"></span> Gemini connection</div></div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="topThemeBtn" title="Toggle theme" aria-label="Toggle theme">☼</button>
+        <button class="icon-btn" id="topExportBtn" title="Export chat" aria-label="Export chat">↓</button>
+        <button class="icon-btn" id="topNewBtn" title="New chat" aria-label="New chat">＋</button>
+      </div>
+    </header>
+
+    <section class="chat" id="chat" aria-live="polite">
+      <div class="welcome" id="welcome">
+        <div class="welcome-orb">✦</div>
+        <h1>What can I help you with?</h1>
+        <p>Ask a question, explore an idea, learn something new, or get help with your work.</p>
+        <div class="suggestions">
+          <button class="suggestion" data-prompt="Explain artificial intelligence in simple words.">✧ Learn something<small>Explain a topic simply</small></button>
+          <button class="suggestion" data-prompt="Give me 5 creative project ideas for a CSE student.">⌘ Get project ideas<small>Explore something new</small></button>
+          <button class="suggestion" data-prompt="Help me write a professional email requesting a meeting.">✎ Write an email<small>Create polished writing</small></button>
+          <button class="suggestion" data-prompt="Explain recursion with a simple programming example.">⚡ Coding help<small>Understand code concepts</small></button>
+        </div>
+      </div>
+    </section>
+
+    <div class="composer-area">
+      <form class="composer" id="chatForm">
+        <textarea id="prompt" rows="1" placeholder="Message Nova AI..." aria-label="Your message"></textarea>
+        <button class="send" id="sendBtn" type="submit" aria-label="Send message">➤</button>
+      </form>
+      <div class="hint">Nova AI can make mistakes. Verify important information. Enter to send · Shift + Enter for a new line.</div>
+    </div>
+    <footer class="credit">Developed By <strong>MD AWAL SHEIKH</strong></footer>
+  </main>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const chatEl = $("chat"), promptEl = $("prompt"), form = $("chatForm");
+const sendBtn = $("sendBtn"), historyEl = $("history");
+const STORAGE_KEY = "nova-ai-conversations-v1";
+let conversations = loadConversations(), activeId = null, busy = false;
+let lastRequest = null;
+
+function loadConversations(){
+  try{
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return Array.isArray(data) ? data.filter(c => c && c.id && Array.isArray(c.messages)) : [];
+  }catch{return [];}
+}
+function saveConversations(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(conversations));}
+  catch{showError("Could not save chat history. Browser storage may be full or disabled.");}
+  renderHistory();
+}
+function makeId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function activeConversation(){return conversations.find(c=>c.id===activeId);}
+function startNewChat(){
+  activeId=null;lastRequest=null;renderChat();promptEl.focus();
+  closeSidebar();renderHistory();
+}
+function renderHistory(){
+  const query=$("historySearch").value.trim().toLowerCase();
+  historyEl.innerHTML="";
+  const matches=conversations.slice().reverse().filter(c=>{
+    const searchable=[c.title,...c.messages.map(m=>m.content)].join(" ").toLowerCase();
+    return searchable.includes(query);
+  });
+  if(!matches.length){
+    const empty=document.createElement("div");empty.className="empty-search";
+    empty.textContent=query?"No matching conversations.":"No conversations yet.";
+    historyEl.appendChild(empty);return;
+  }
+  matches.forEach(c=>{
+    const b=document.createElement("button");
+    b.className="history-item"+(c.id===activeId?" active":"");
+    b.textContent=c.title||"New conversation";b.title=c.title||"New conversation";
+    b.onclick=()=>{activeId=c.id;lastRequest=null;renderChat();renderHistory();closeSidebar();};
+    historyEl.appendChild(b);
+  });
+}
+function renderChat(){
+  chatEl.innerHTML="";
+  const c=activeConversation();
+  if(!c||!c.messages.length){
+    const welcome=document.createElement("div");welcome.className="welcome";
+    welcome.innerHTML='<div class="welcome-orb">✦</div><h1>What can I help you with?</h1><p>Ask a question, explore an idea, learn something new, or get help with your work.</p><div class="suggestions"><button class="suggestion" data-prompt="Explain artificial intelligence in simple words.">✧ Learn something<small>Explain a topic simply</small></button><button class="suggestion" data-prompt="Give me 5 creative project ideas for a CSE student.">⌘ Get project ideas<small>Explore something new</small></button><button class="suggestion" data-prompt="Help me write a professional email requesting a meeting.">✎ Write an email<small>Create polished writing</small></button><button class="suggestion" data-prompt="Explain recursion with a simple programming example.">⚡ Coding help<small>Understand code concepts</small></button></div>';
+    chatEl.appendChild(welcome);
+    welcome.querySelectorAll("[data-prompt]").forEach(b=>b.addEventListener("click",()=>{promptEl.value=b.dataset.prompt;sendMessage();}));
+    return;
+  }
+  c.messages.forEach((m,i)=>addMessage(m.role,m.content,i));
+  chatEl.scrollTop=chatEl.scrollHeight;
+}
+function renderMarkdown(content){
+  const fallback=escapeHtml(content).replace(/\n/g,"<br>");
+  if(!window.marked||!window.DOMPurify)return fallback;
+  try{
+    marked.setOptions({gfm:true,breaks:true});
+    const raw=marked.parse(content);
+    return DOMPurify.sanitize(raw);
+  }catch{return fallback;}
+}
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+}
+function enhanceCodeBlocks(container){
+  container.querySelectorAll("pre").forEach(pre=>{
+    const code=pre.querySelector("code");
+    if(!code||pre.parentElement.classList.contains("code-block"))return;
+    if(window.hljs){
+      try{hljs.highlightElement(code);}catch{}
+    }
+    const langClass=[...code.classList].find(c=>c.startsWith("language-"));
+    const language=langClass?langClass.replace("language-",""):"Code";
+    const wrapper=document.createElement("div");wrapper.className="code-block";
+    const head=document.createElement("div");head.className="code-head";
+    const label=document.createElement("span");label.textContent=language;
+    const copy=document.createElement("button");copy.type="button";copy.textContent="Copy code";
+    copy.addEventListener("click",async()=>{
+      const text=code.textContent;
+      try{await navigator.clipboard.writeText(text);copy.textContent="Copied!";}
+      catch{copy.textContent="Copy unavailable";}
+      setTimeout(()=>copy.textContent="Copy code",1300);
+    });
+    head.append(label,copy);pre.parentNode.insertBefore(wrapper,pre);wrapper.append(head,pre);
+  });
+}
+function addMessage(role,content,index){
+  const row=document.createElement("div");row.className="message "+(role==="user"?"user":"assistant");
+  const avatar=document.createElement("div");avatar.className="avatar";avatar.textContent=role==="user"?"You":"✦";
+  const wrap=document.createElement("div");wrap.className="bubble-wrap";
+  const who=document.createElement("div");who.className="who";who.textContent=role==="user"?"YOU":"NOVA AI";
+  const bubble=document.createElement("div");bubble.className="bubble";
+  if(role==="assistant"){
+    bubble.innerHTML=renderMarkdown(content);enhanceCodeBlocks(bubble);
+  }else{bubble.textContent=content;}
+  wrap.append(who,bubble);
+  const actions=document.createElement("div");actions.className="message-actions";
+  if(role==="assistant"){
+    const copy=actionButton("Copy",async()=>{
+      try{await navigator.clipboard.writeText(content);copy.textContent="Copied!";}
+      catch{copy.textContent="Unavailable";}
+      setTimeout(()=>copy.textContent="Copy",1200);
+    });
+    actions.appendChild(copy);
+    if(index===activeConversation()?.messages.length-1){
+      actions.appendChild(actionButton("↻ Regenerate",()=>regenerateResponse()));
+    }
+  }else{
+    actions.appendChild(actionButton("✎ Edit",()=>editMessage(index)));
+  }
+  wrap.appendChild(actions);row.append(avatar,wrap);chatEl.appendChild(row);
+}
+function actionButton(label,handler){
+  const b=document.createElement("button");b.type="button";b.textContent=label;b.addEventListener("click",handler);return b;
+}
+function showTyping(){
+  const row=document.createElement("div");row.className="message assistant";row.id="typingRow";
+  row.innerHTML='<div class="avatar">✦</div><div class="bubble-wrap"><div class="who">NOVA AI</div><div class="bubble typing"><span></span><span></span><span></span></div></div>';
+  chatEl.appendChild(row);chatEl.scrollTop=chatEl.scrollHeight;
+}
+function showError(message){
+  const box=document.createElement("div");box.className="error";box.textContent=message;
+  chatEl.appendChild(box);chatEl.scrollTop=chatEl.scrollHeight;
+}
+async function requestAI(conversation,{regenerate=false}={}){
+  if(busy)return;
+  const messages=conversation.messages.map(m=>({role:m.role,content:m.content}));
+  if(regenerate&&messages.length&&messages[messages.length-1].role==="assistant")messages.pop();
+  if(!messages.length||messages[messages.length-1].role!=="user"){showError("There is no user message to send.");return;}
+  busy=true;sendBtn.disabled=true;showTyping();
+  try{
+    const response=await fetch("/api/chat",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({messages,personality:$("personality").value})
+    });
+    let data={};
+    try{data=await response.json();}catch{}
+    $("typingRow")?.remove();
+    if(!response.ok)throw new Error(data.error||"Request failed. Please try again.");
+    if(!data.reply)throw new Error("The server returned an empty response.");
+    // Avoid adding a stale answer if the user switched conversations while waiting.
+    if(activeId!==conversation.id)return;
+    conversation.messages.push({role:"assistant",content:data.reply});
+    conversation.updatedAt=Date.now();saveConversations();renderChat();
+  }catch(err){
+    $("typingRow")?.remove();
+    if(activeId===conversation.id)showError(err.message||"Could not connect to the server.");
+  }finally{
+    busy=false;sendBtn.disabled=false;promptEl.focus();
+  }
+}
+async function sendMessage(){
+  const text=promptEl.value.trim();if(!text||busy)return;
+  if(!activeId){
+    activeId=makeId();
+    conversations.push({id:activeId,title:text.slice(0,45),messages:[],updatedAt:Date.now()});
+  }
+  const c=activeConversation();
+  c.messages.push({role:"user",content:text});c.updatedAt=Date.now();
+  promptEl.value="";promptEl.style.height="auto";
+  saveConversations();renderChat();
+  await requestAI(c);
+}
+async function regenerateResponse(){
+  const c=activeConversation();if(!c||busy)return;
+  if(c.messages.at(-1)?.role==="assistant")c.messages.pop();
+  saveConversations();renderChat();
+  await requestAI(c,{regenerate:true});
+}
+function editMessage(index){
+  const c=activeConversation();if(!c||busy)return;
+  const message=c.messages[index];if(!message||message.role!=="user")return;
+  promptEl.value=message.content;
+  c.messages=c.messages.slice(0,index);
+  if(!c.messages.length){
+    conversations=conversations.filter(item=>item.id!==c.id);activeId=null;
+  }
+  saveConversations();renderChat();promptEl.focus();
+  promptEl.style.height="auto";promptEl.style.height=Math.min(promptEl.scrollHeight,160)+"px";
+  promptEl.scrollIntoView({behavior:"smooth",block:"end"});
+}
+function exportText(){
+  const c=activeConversation();
+  if(!c||!c.messages.length){alert("There is no conversation to export.");return;}
+  const textContent=`${c.title||"Nova AI Conversation"}\n${"=".repeat(45)}\n\n`+
+    c.messages.map(m=>`${m.role==="user"?"YOU":"NOVA AI"}:\n${m.content}`).join("\n\n------------------------------\n\n");
+  const blob=new Blob([textContent],{type:"text/plain;charset=utf-8"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");
+  a.href=url;a.download=`nova-ai-${safeFilename(c.title||"chat")}.txt`;a.click();URL.revokeObjectURL(url);
+}
+function safeFilename(name){return name.toLowerCase().replace(/[^a-z0-9-_]+/g,"-").replace(/^-|-$/g,"").slice(0,45)||"chat";}
+function exportPDF(){
+  const c=activeConversation();
+  if(!c||!c.messages.length){alert("There is no conversation to export.");return;}
+  document.title=`${c.title||"Nova AI Chat"} - Nova AI`;
+  window.print();
+}
+function exportCurrent(){exportText();}
+form.addEventListener("submit",e=>{e.preventDefault();sendMessage();});
+promptEl.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}
+});
+promptEl.addEventListener("input",()=>{
+  promptEl.style.height="auto";promptEl.style.height=Math.min(promptEl.scrollHeight,160)+"px";
+});
+$("newChat").onclick=startNewChat;$("topNewBtn").onclick=startNewChat;
+$("clearBtn").onclick=()=>{
+  if(confirm("Delete all saved conversations from this browser?")){
+    conversations=[];activeId=null;saveConversations();renderChat();
+  }
+};
+const appEl=document.querySelector(".app");
+const sidebarEl=$("sidebar");
+const sidebarBackdrop=$("sidebarBackdrop");
+const mobileSidebarQuery=window.matchMedia("(max-width: 850px)");
+
+function isSidebarOpen(){
+  return mobileSidebarQuery.matches
+    ? sidebarEl.classList.contains("open")
+    : !appEl.classList.contains("sidebar-collapsed");
+}
+function syncSidebarState(){
+  const open=isSidebarOpen();
+  $("menuBtn").setAttribute("aria-expanded",open?"true":"false");
+  sidebarBackdrop.classList.toggle("visible",mobileSidebarQuery.matches&&open);
+}
+function openSidebar(){
+  if(mobileSidebarQuery.matches) sidebarEl.classList.add("open");
+  else appEl.classList.remove("sidebar-collapsed");
+  syncSidebarState();
+}
+function closeSidebar(){
+  if(mobileSidebarQuery.matches) sidebarEl.classList.remove("open");
+  else appEl.classList.add("sidebar-collapsed");
+  syncSidebarState();
+}
+function toggleSidebar(){
+  if(isSidebarOpen()) closeSidebar();
+  else openSidebar();
+}
+$("menuBtn").addEventListener("click",toggleSidebar);
+$("closeSidebarBtn").addEventListener("click",closeSidebar);
+sidebarBackdrop.addEventListener("click",closeSidebar);
+
+// Clicking outside the sidebar closes it on desktop too.
+document.querySelector(".main").addEventListener("click",(event)=>{
+  if(event.target.closest("#menuBtn")) return;
+  if(!mobileSidebarQuery.matches&&isSidebarOpen()) closeSidebar();
+});
+
+// Reset the layout cleanly when crossing the mobile/desktop breakpoint.
+function handleSidebarBreakpoint(){
+  sidebarEl.classList.remove("open");
+  appEl.classList.remove("sidebar-collapsed");
+  syncSidebarState();
+}
+if(mobileSidebarQuery.addEventListener){
+  mobileSidebarQuery.addEventListener("change",handleSidebarBreakpoint);
+}else{
+  mobileSidebarQuery.addListener(handleSidebarBreakpoint);
+}
+syncSidebarState();
+$("historySearch").addEventListener("input",renderHistory);
+function toggleTheme(){
+  const next=document.documentElement.dataset.theme==="light"?"dark":"light";
+  document.documentElement.dataset.theme=next;
+  try{localStorage.setItem("nova-ai-theme",next);}catch{}
+}
+$("themeBtn").onclick=toggleTheme;$("topThemeBtn").onclick=toggleTheme;
+$("exportTxtBtn").onclick=exportText;$("exportPdfBtn").onclick=exportPDF;$("topExportBtn").onclick=exportCurrent;
+try{document.documentElement.dataset.theme=localStorage.getItem("nova-ai-theme")||"dark";}catch{}
+document.querySelectorAll("[data-prompt]").forEach(b=>b.addEventListener("click",()=>{promptEl.value=b.dataset.prompt;sendMessage();}));
+renderHistory();renderChat();
+</script>
+</body>
+</html>
